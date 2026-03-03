@@ -1,21 +1,38 @@
 # 📄 Smart CV Filter
 
-An AI-powered CV analysis tool that uses **RAG (Retrieval Augmented Generation)** and **LLM** to intelligently match CVs against Job Descriptions.
+An intelligent CV analysis tool that matches CVs against Job Descriptions using advanced NLP and optional AI features.
+
+**✨ Works Perfectly WITHOUT OpenAI API Key! ✨**
+
+## 🎯 Key Highlights
+
+- 🚀 **No API Key Required** - Full functionality works out of the box
+- 📊 **Intelligent Scoring** - TF-IDF, keyword matching, and similarity analysis
+- 💼 **Skill Detection** - Automatic identification of technical skills
+- 📈 **Match Score** - Get 0-100% compatibility scores instantly
+- 📱 **Beautiful UI** - Modern, user-friendly Streamlit interface
+- 🤖 **Optional AI** - Add OpenAI key for enhanced insights (not required)
+- 💾 **Free & Private** - All processing happens locally
 
 ## 🌟 Features
 
+### Core Features (No API Key Needed)
 - **Multi-format Support**: Upload CVs in PDF, DOCX, or TXT format
 - **Intelligent Analysis**: 
-  - Keyword extraction and matching
-  - Technical skill identification
+  - Keyword extraction and matching using TF-IDF
+  - Technical skill identification (Python, AWS, Docker, etc.)
   - Match score calculation (0-100%)
-  - Text similarity analysis using TF-IDF
-- **AI-Powered Insights**: LLM-based recommendations and gap analysis (OpenAI GPT-3.5)
+  - Text similarity analysis
+  - Professional recommendations
+- **Beautiful UI**: Modern Streamlit interface with real-time analysis
+- **Detailed Reports**: Downloadable analysis reports with full breakdown
+
+### Optional AI Features (with OpenAI API Key)
+- **AI-Powered Insights**: Natural language recommendations (OpenAI GPT-3.5)
 - **RAG Integration**: 
   - Vector database (ChromaDB) for storing CVs and JDs
   - Contextual analysis using similar historical matches
-- **Beautiful UI**: Modern Streamlit interface with real-time analysis
-- **Detailed Reports**: Downloadable analysis reports
+  - Intelligent comparison across multiple candidates
 
 ## 📁 Project Structure
 
@@ -43,7 +60,7 @@ cv-filtering/
 
 - Python 3.8 or higher
 - pip (Python package manager)
-- (Optional) OpenAI API key for LLM features
+- **(Optional)** OpenAI API key - only if you want AI-powered insights
 
 ### Installation
 
@@ -54,7 +71,7 @@ cv-filtering/
 
 2. **Create a virtual environment** (recommended)
    ```bash
-   python -m venv venv
+   python3 -m venv venv
    
    # On macOS/Linux:
    source venv/bin/activate
@@ -68,11 +85,13 @@ cv-filtering/
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables** (optional, for LLM features)
+4. **[OPTIONAL] Set up OpenAI API key** (skip if you don't have one)
    ```bash
    cp .env.example .env
    # Edit .env and add your OpenAI API key
    ```
+   
+   **Note:** The app works great without this step!
 
 ### Running the Application
 
@@ -81,6 +100,8 @@ streamlit run apps/streamlit_app.py
 ```
 
 The application will open in your default browser at `http://localhost:8501`
+
+**🎉 That's it! No API key needed to start analyzing CVs!**
 
 ## 📖 Usage Guide
 
