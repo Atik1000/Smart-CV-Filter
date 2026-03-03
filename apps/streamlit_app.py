@@ -12,7 +12,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.extract_text import extract_text
 from utils.analyze_cv import CVAnalyzer
-from utils.embedding_db import CVEmbeddingDB
+
+# Optional RAG support
+try:
+    from utils.embedding_db import CVEmbeddingDB
+    RAG_AVAILABLE = True
+except Exception as e:
+    RAG_AVAILABLE = False
+    print(f"⚠️ ChromaDB not available - RAG features disabled (Reason: {type(e).__name__})")
 
 
 # Page configuration
@@ -259,18 +266,23 @@ def main():
             
             # RAG settings
             st.subheader("🔍 Database Features")
-            use_rag = st.checkbox(
-                "Enable Vector Database",
-                value=False,
-                help="Store and compare multiple CVs"
-            )
-            
-            save_to_db = st.checkbox(
-                "Save to Database",
-                value=False,
-                help="Store current CV & JD for future comparisons",
-                disabled=not use_rag
-            )
+            if not RAG_AVAILABLE:
+                st.info("ℹ️ Vector database features unavailable (ChromaDB not installed). Core analysis works perfectly!")
+                use_rag = False
+                save_to_db = False
+            else:
+                use_rag = st.checkbox(
+                    "Enable Vector Database",
+                    value=False,
+                    help="Store and compare multiple CVs"
+                )
+                
+                save_to_db = st.checkbox(
+                    "Save to Database",
+                    value=False,
+                    help="Store current CV & JD for future comparisons",
+                    disabled=not use_rag
+                )
         
         # Initialize analyzer
         if openai_key:
@@ -279,11 +291,11 @@ def main():
             st.session_state.analyzer = CVAnalyzer()
         
         # Initialize database
-        if use_rag and st.session_state.db is None:
+        if use_rag and RAG_AVAILABLE and st.session_state.db is None:
             st.session_state.db = CVEmbeddingDB()
             
         # Database stats
-        if use_rag and st.session_state.db:
+        if use_rag and RAG_AVAILABLE and st.session_state.db:
             st.markdown("---")
             st.subheader("📊 Database Stats")
             stats = st.session_state.db.get_collection_stats()
