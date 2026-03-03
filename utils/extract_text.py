@@ -5,8 +5,19 @@ Supports PDF, DOCX, and TXT formats.
 
 import io
 from typing import Union, BinaryIO
-import pdfplumber
-import docx2txt
+
+# Optional imports for document processing
+try:
+    import pdfplumber
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
+
+try:
+    import docx2txt
+    DOCX_AVAILABLE = True
+except ImportError:
+    DOCX_AVAILABLE = False
 
 
 def extract_text(file: Union[BinaryIO, str]) -> str:
@@ -50,6 +61,9 @@ def extract_pdf(file: Union[BinaryIO, str]) -> str:
     Returns:
         str: Extracted text from all pages
     """
+    if not PDF_AVAILABLE:
+        raise ImportError("pdfplumber is not installed. Install it with: pip install pdfplumber")
+    
     text = ""
     
     try:
@@ -84,6 +98,9 @@ def extract_docx(file: Union[BinaryIO, str]) -> str:
     Returns:
         str: Extracted text
     """
+    if not DOCX_AVAILABLE:
+        raise ImportError("docx2txt is not installed. Install it with: pip install docx2txt")
+    
     try:
         # Handle file object vs file path
         if hasattr(file, 'read'):
