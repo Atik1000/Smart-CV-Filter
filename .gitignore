@@ -56,9 +56,17 @@ vector_db/
 # Temporary files
 *.pdf
 *.docx
-*.txt
 uploads/
 temp/
+
+# Ignore txt files in specific directories (uploaded CVs, samples, etc)
+# But allow important config/doc files in root
+/uploads/*.txt
+/temp/*.txt
+/examples/*.txt
+/tests/*.txt
+test_*.txt
+sample_*.txt
 
 # Logs
 *.log

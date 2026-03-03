@@ -1,0 +1,152 @@
+🚀 STREAMLIT CLOUD DEPLOYMENT GUIDE
+═══════════════════════════════════════════════════════════════
+
+✅ FILES UPDATED FOR DEPLOYMENT:
+
+1. ✅ requirements.txt - Clean dependencies (no ChromaDB/LangChain)
+2. ✅ packages.txt - System dependencies for PDF processing
+3. ✅ apps/streamlit_app.py - Optional imports for RAG features
+4. ✅ utils/extract_text.py - Safe imports with fallbacks
+
+
+═══════════════════════════════════════════════════════════════
+
+📋 DEPLOYMENT STEPS:
+
+1. COMMIT & PUSH YOUR CHANGES
+   ─────────────────────────────
+   git add .
+   git commit -m "Fix: Update for Streamlit Cloud deployment"
+   git push origin main
+
+
+2. REDEPLOY ON STREAMLIT CLOUD
+   ─────────────────────────────
+   Go to: https://share.streamlit.io/
+   
+   Option A: Automatic Redeployment
+   • If already deployed, changes will auto-deploy (wait 2-3 min)
+   
+   Option B: Manual Reboot
+   • Click "⋮" menu on your app
+   • Select "Reboot app"
+   
+   Option C: Clear Cache & Redeploy
+   • Click "⋮" menu
+   • Select "Clear cache"  
+   • Then "Reboot app"
+
+
+3. VERIFY DEPLOYMENT
+   ─────────────────────────────
+   ✓ Check logs for "Processed dependencies!"
+   ✓ No import errors for pdfplumber, docx2txt, scikit-learn
+   ✓ App should load without errors
+   ✓ Vector database features will be disabled (expected)
+
+
+═══════════════════════════════════════════════════════════════
+
+🔧 WHAT WAS FIXED:
+
+REMOVED (Incompatible with Cloud):
+  ✗ chromadb - Python 3.14 compatibility issues
+  ✗ langchain - Heavy dependency with conflicts
+  ✗ langchain-community - Not needed for core features
+
+UPDATED (Now uses >= instead of ==):
+  ✓ streamlit>=1.31.0
+  ✓ numpy>=1.26.0
+  ✓ scikit-learn>=1.4.0
+  ✓ pdfplumber>=0.10.3
+
+ADDED:
+  ✓ packages.txt - System libraries for PDF processing
+  ✓ Safe imports - Optional features won't break app
+
+
+═══════════════════════════════════════════════════════════════
+
+💡 FEATURES ON STREAMLIT CLOUD:
+
+✅ WORKING:
+  ✓ CV upload (PDF/DOCX/TXT)
+  ✓ Text extraction
+  ✓ Keyword matching
+  ✓ Skill detection
+  ✓ Match scoring
+  ✓ Similarity analysis
+  ✓ Recommendations
+  ✓ Report download
+
+⚠️ DISABLED:
+  ✗ Vector Database (RAG)
+  ✗ ChromaDB storage
+  
+✨ OPTIONAL (Add in Streamlit Cloud Secrets):
+  • OpenAI API key for AI insights
+
+
+═══════════════════════════════════════════════════════════════
+
+🔐 ADDING OPENAI API KEY (Optional):
+
+1. Go to your app settings on Streamlit Cloud
+2. Navigate to "Secrets" section
+3. Add:
+   OPENAI_API_KEY = "sk-your-key-here"
+4. Save and reboot app
+
+
+═══════════════════════════════════════════════════════════════
+
+🐛 TROUBLESHOOTING:
+
+ERROR: ModuleNotFoundError: No module named 'X'
+SOLUTION: 
+  • Clear cache and reboot
+  • Check requirements.txt is committed
+  • Wait 2-3 minutes for rebuild
+
+
+ERROR: PDF extraction fails
+SOLUTION:
+  • Ensure packages.txt is committed
+  • Check PDF is not password-protected
+
+
+ERROR: App still showing old version
+SOLUTION:
+  • Hard refresh browser (Cmd+Shift+R / Ctrl+Shift+R)
+  • Clear Streamlit cache from menu
+  • Reboot app from Streamlit Cloud dashboard
+
+
+═══════════════════════════════════════════════════════════════
+
+📊 CURRENT STATUS:
+
+Repository: Atik1000/Smart-CV-Filter
+Branch: main
+Python Version: 3.13 (Streamlit Cloud default)
+Entry Point: apps/streamlit_app.py
+
+Ready to deploy! 🎉
+
+
+═══════════════════════════════════════════════════════════════
+
+⚡ QUICK FIX COMMANDS:
+
+# Commit changes
+git add requirements.txt packages.txt apps/ utils/
+git commit -m "Deploy: Fix dependencies for Streamlit Cloud"
+git push origin main
+
+# Then wait 2-3 minutes for auto-deployment
+# Or manually reboot from Streamlit Cloud dashboard
+
+
+═══════════════════════════════════════════════════════════════
+
+Need help? Check Streamlit Cloud logs for detailed error messages!
