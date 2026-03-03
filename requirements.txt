@@ -1,0 +1,24 @@
+# Core Dependencies
+streamlit>=1.31.0
+python-dotenv>=1.0.0
+
+# Document Processing
+pdfplumber>=0.10.3
+docx2txt>=0.8
+
+# Machine Learning & NLP
+scikit-learn>=1.4.0
+numpy>=1.26.0
+
+# LLM Integration (Optional)
+openai>=1.12.0
+tiktoken>=0.6.0
+
+# Optional: Advanced NLP (uncomment if needed)
+# spacy==3.7.2
+# To download spacy model, run: python -m spacy download en_core_web_sm
+
+# Development
+pytest==8.0.0
+black==24.1.1
+flake8==7.0.0
