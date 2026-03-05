@@ -1,6 +1,7 @@
 # Core Dependencies
 streamlit>=1.31.0
 python-dotenv>=1.0.0
+python-dateutil>=2.8.2
 
 # Document Processing
 pdfplumber>=0.10.3
@@ -10,9 +11,29 @@ docx2txt>=0.8
 scikit-learn>=1.4.0
 numpy>=1.26.0
 
-# LLM Integration (Optional)
+# LLM Integration
+# Note: Choose one or more AI providers based on your needs
+# OpenAI (Paid)
 openai>=1.12.0
 tiktoken>=0.6.0
+
+# Optional AI Providers (uncomment to use)
+# Anthropic Claude (Has free tier) - uncomment below:
+# anthropic>=0.21.0
+
+# Google Gemini (Free) - uncomment below:
+# google-generativeai>=0.4.0
+
+# Groq (Fast & Free) - uncomment below:
+# groq>=0.4.0
+
+# Ollama (Local & Free) - uncomment below:
+# ollama>=0.1.6
+
+# RAG - Vector Database & LangChain
+chromadb>=0.4.22
+langchain>=0.1.5
+langchain-community>=0.0.19
 
 # Optional: Advanced NLP (uncomment if needed)
 # spacy==3.7.2

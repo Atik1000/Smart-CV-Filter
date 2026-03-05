@@ -13,13 +13,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.extract_text import extract_text
 from utils.analyze_cv import CVAnalyzer
 
+# Import LLM provider info
+try:
+    from utils.llm_provider import LLMProvider
+    LLM_PROVIDER_AVAILABLE = True
+except ImportError:
+    LLM_PROVIDER_AVAILABLE = False
+
 # Optional RAG support
 try:
     from utils.embedding_db import CVEmbeddingDB
     RAG_AVAILABLE = True
 except Exception as e:
     RAG_AVAILABLE = False
-    print(f"⚠️ ChromaDB not available - RAG features disabled (Reason: {type(e).__name__})")
+    print(f"[INFO] ChromaDB not available - RAG features disabled (Reason: {type(e).__name__})")
 
 
 # Page configuration
@@ -30,9 +37,83 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Load Font Awesome
+st.markdown("""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+""", unsafe_allow_html=True)
+
 # Custom CSS - Enhanced UI
 st.markdown("""
     <style>
+    /* Icon styling */
+    .fa-icon {
+        margin-right: 0.5rem;
+        color: inherit;
+    }
+    
+    .header-icon {
+        font-size: 2.5rem;
+        margin-right: 1rem;
+        vertical-align: middle;
+    }
+    
+    /* Professional metric card styling */
+    div[data-testid="metric-container"] {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 1.2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+    
+    div[data-testid="metric-container"]:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+    
+    /* Enhanced skill badges */
+    .skill-badge {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        padding: 0.6rem 1.2rem;
+        border-radius: 25px;
+        margin: 0.4rem;
+        display: inline-block;
+        font-weight: 600;
+        color: #2e7d32;
+        border: 2px solid #66bb6a;
+        box-shadow: 0 2px 6px rgba(76, 175, 80, 0.2);
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+    
+    .skill-badge:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+    }
+    
+    .skill-badge i {
+        margin-right: 0.4rem;
+        color: #4caf50;
+    }
+    
+    .missing-badge {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        padding: 0.6rem 1.2rem;
+        border-radius: 25px;
+        margin: 0.4rem;
+        display: inline-block;
+        font-weight: 600;
+        color: #c62828;
+        border: 2px solid #ef5350;
+        box-shadow: 0 2px 6px rgba(244, 67, 54, 0.2);
+        font-size: 0.9rem;
+    }
+    
+    .missing-badge i {
+        margin-right: 0.4rem;
+        color: #f44336;
+    }
     /* Main Header */
     .main-header {
         font-size: 3rem;
@@ -190,20 +271,20 @@ def render_score_box(score: float):
     """Render score with color coding."""
     if score >= 70:
         css_class = "score-high"
-        emoji = "🎉"
+        icon = '<i class="fas fa-trophy" style="color: #28a745;"></i>'
         label = "Excellent Match"
     elif score >= 50:
         css_class = "score-medium"
-        emoji = "👍"
+        icon = '<i class="fas fa-thumbs-up" style="color: #ffc107;"></i>'
         label = "Good Match"
     else:
         css_class = "score-low"
-        emoji = "⚠️"
+        icon = '<i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>'
         label = "Needs Improvement"
     
     st.markdown(f"""
         <div class="score-box {css_class}">
-            <h2>{emoji} {score}%</h2>
+            <h2>{icon} {score}%</h2>
             <p style="margin: 0; font-size: 1.2rem;">{label}</p>
         </div>
     """, unsafe_allow_html=True)
@@ -214,60 +295,120 @@ def main():
     initialize_session_state()
     
     # Header
-    st.markdown('<h1 class="main-header">🎯 Smart CV Filter</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header"><i class="fas fa-crosshairs header-icon"></i>Smart CV Filter</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Intelligent CV Analysis - Match CVs with Job Descriptions Instantly!</p>', 
                 unsafe_allow_html=True)
     
     # Welcome Message
     st.markdown("""
         <div class="info-box">
-            <h3>👋 Welcome! How to Use:</h3>
+            <h3><i class="fas fa-hand-wave fa-icon"></i>Welcome! How to Use:</h3>
             <p style="margin: 0.5rem 0;">
-                ✅ <strong>Step 1:</strong> Upload your CV (PDF, DOCX, or TXT)<br>
-                ✅ <strong>Step 2:</strong> Paste the Job Description<br>
-                ✅ <strong>Step 3:</strong> Click "Analyze CV" and get instant results!<br>
-                💡 <strong>Pro Tip:</strong> OpenAI API key is optional - the app works great without it!
+                <i class="fas fa-check-circle fa-icon" style="color: #28a745;"></i><strong>Step 1:</strong> Upload your CV (PDF, DOCX, or TXT)<br>
+                <i class="fas fa-check-circle fa-icon" style="color: #28a745;"></i><strong>Step 2:</strong> Paste the Job Description<br>
+                <i class="fas fa-check-circle fa-icon" style="color: #28a745;"></i><strong>Step 3:</strong> Click "Analyze CV" and get instant results!<br>
+                <i class="fas fa-lightbulb fa-icon" style="color: #ffd700;"></i><strong>Pro Tip:</strong> OpenAI API key is optional - the app works great without it!
             </p>
         </div>
     """, unsafe_allow_html=True)
     
     # Sidebar for configuration
     with st.sidebar:
-        st.header("⚙️ Settings")
+        st.markdown('<h2 style="margin: 0;"><i class="fas fa-cog fa-icon"></i>Settings</h2>', unsafe_allow_html=True)
         
         st.markdown("---")
         
         # Info about no API key needed
-        st.info("ℹ️ **No API Key? No Problem!**\n\nThe app works perfectly without OpenAI. You'll get:\n- Match scores\n- Skill analysis\n- Keyword matching\n- Detailed recommendations")
+        st.markdown("""
+            <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
+                <p style="margin: 0; color: #0c5460;">
+                    <i class="fas fa-info-circle"></i> <strong>No API Key? No Problem!</strong>
+                </p>
+                <p style="margin: 0.5rem 0 0 0; color: #0c5460; font-size: 0.9rem;">
+                    The app works perfectly without OpenAI. You'll get:<br>
+                    • Match scores<br>
+                    • Skill analysis<br>
+                    • Keyword matching<br>
+                    • Detailed recommendations
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
         
         st.markdown("---")
         
         # Advanced Settings
-        with st.expander("🚀 Advanced Settings (Optional)", expanded=False):
-            # OpenAI API Key
-            openai_key = st.text_input(
-                "OpenAI API Key",
-                type="password",
-                help="Optional: Add for AI-powered insights. The app works great without it!"
+        with st.expander("⚡ Advanced Settings (Optional)", expanded=False):
+            # LLM Provider Selection
+            st.markdown("**🤖 AI Provider Selection**")
+            
+            llm_providers = {
+                "OpenAI GPT": "openai",
+                "Anthropic Claude (Free Tier)": "anthropic",
+                "Google Gemini (Free)": "google",
+                "Groq (Fast & Free)": "groq",
+                "Ollama (Local & Free)": "ollama"
+            }
+            
+            selected_provider_name = st.selectbox(
+                "Choose AI Provider",
+                options=list(llm_providers.keys()),
+                index=0,
+                help="Select which AI provider to use for analysis"
             )
             
-            if openai_key:
-                st.success("✅ API Key added! AI features enabled.")
+            llm_provider = llm_providers[selected_provider_name]
+            
+            # Show provider info
+            if llm_provider == "ollama":
+                st.info("💻 **Ollama**: Runs locally on your machine. Free & private. Install from ollama.ai")
+                api_key_needed = False
+                openai_key = None
+            elif llm_provider in ["google", "groq", "anthropic"]:
+                st.info(f"✨ **{selected_provider_name}**: Has a generous free tier! Great alternative to OpenAI.")
+                api_key_needed = True
+            else:
+                api_key_needed = True
+            
+            # API Key Input
+            if api_key_needed:
+                openai_key = st.text_input(
+                    f"{selected_provider_name} API Key",
+                    type="password",
+                    help=f"Enter your {selected_provider_name} API key for AI-powered insights"
+                )
+            else:
+                openai_key = None
+            
+            # Show success message if API key provided or Ollama selected
+            if openai_key or llm_provider == "ollama":
+                st.markdown("""
+                    <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 0.75rem; border-radius: 5px;">
+                        <p style="margin: 0; color: #155724;">
+                            <i class="fas fa-check-circle"></i> <strong>AI features enabled!</strong>
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
             
             # Use LLM toggle
             use_llm = st.checkbox(
                 "Enable AI-Powered Analysis",
-                value=bool(openai_key),
-                help="Get advanced AI insights (requires API key)",
-                disabled=not openai_key
+                value=bool(openai_key or llm_provider == "ollama"),
+                help="Get advanced AI insights",
+                disabled=not (openai_key or llm_provider == "ollama")
             )
             
             st.markdown("---")
             
             # RAG settings
-            st.subheader("🔍 Database Features")
+            st.markdown('<h3><i class="fas fa-database fa-icon"></i>Database Features</h3>', unsafe_allow_html=True)
             if not RAG_AVAILABLE:
-                st.info("ℹ️ Vector database features unavailable (ChromaDB not installed). Core analysis works perfectly!")
+                st.markdown("""
+                    <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 0.75rem; border-radius: 5px;">
+                        <p style="margin: 0; color: #0c5460; font-size: 0.9rem;">
+                            <i class="fas fa-info-circle"></i> Vector database features unavailable (ChromaDB not installed). Core analysis works perfectly!
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
                 use_rag = False
                 save_to_db = False
             else:
@@ -284,11 +425,11 @@ def main():
                     disabled=not use_rag
                 )
         
-        # Initialize analyzer
-        if openai_key:
-            st.session_state.analyzer = CVAnalyzer(openai_api_key=openai_key)
+        # Initialize analyzer with selected LLM provider
+        if openai_key or llm_provider == "ollama":
+            st.session_state.analyzer = CVAnalyzer(llm_provider=llm_provider, api_key=openai_key)
         elif st.session_state.analyzer is None:
-            st.session_state.analyzer = CVAnalyzer()
+            st.session_state.analyzer = CVAnalyzer(llm_provider="openai", api_key=None)
         
         # Initialize database
         if use_rag and RAG_AVAILABLE and st.session_state.db is None:
@@ -297,7 +438,7 @@ def main():
         # Database stats
         if use_rag and RAG_AVAILABLE and st.session_state.db:
             st.markdown("---")
-            st.subheader("📊 Database Stats")
+            st.markdown('<h3><i class="fas fa-chart-bar fa-icon"></i>Database Stats</h3>', unsafe_allow_html=True)
             stats = st.session_state.db.get_collection_stats()
             
             col_stat1, col_stat2 = st.columns(2)
@@ -308,35 +449,55 @@ def main():
             
             if st.button("🗑️ Clear Database", use_container_width=True):
                 st.session_state.db.clear_collection()
-                st.success("✅ Database cleared!")
+                st.markdown("""
+                    <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 0.75rem; border-radius: 5px; margin: 0.5rem 0;">
+                        <p style="margin: 0; color: #155724;">
+                            <i class="fas fa-check-circle"></i> <strong>Database cleared!</strong>
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
                 st.rerun()
         
         st.markdown("---")
         
         # Help Section
-        with st.expander("❓ Need Help?"):
-            st.markdown("""
-                **Supported Formats:**
-                - PDF files
-                - DOCX files  
-                - TXT files
-                
-                **Tips for Best Results:**
-                - Use well-formatted CVs
-                - Paste complete job descriptions
-                - Include technical skills in both
-                
-                **Scoring:**
-                - 70-100%: Excellent match
-                - 50-69%: Good match
-                - 0-49%: Needs improvement
-            """)
+        with st.expander("❓ Need Help?", expanded=False):
+            st.markdown("**Supported Formats:**")
+            st.write("• PDF files")
+            st.write("• DOCX files")
+            st.write("• TXT files")
+            
+            st.markdown("")
+            st.markdown("**Tips for Best Results:**")
+            st.write("• Use well-formatted CVs")
+            st.write("• Paste complete job descriptions")
+            st.write("• Include technical skills in both")
+            
+            st.markdown("")
+            st.markdown("**Scoring:**")
+            col_h1, col_h2 = st.columns([1, 4])
+            with col_h1:
+                st.markdown("🏆")
+            with col_h2:
+                st.write("70-100%: Excellent match")
+            
+            col_h3, col_h4 = st.columns([1, 4])
+            with col_h3:
+                st.markdown("👍")
+            with col_h4:
+                st.write("50-69%: Good match")
+            
+            col_h5, col_h6 = st.columns([1, 4])
+            with col_h5:
+                st.markdown("⚠️")
+            with col_h6:
+                st.write("0-49%: Needs improvement")
     
     # Main content area
     col1, col2 = st.columns([1, 1], gap="large")
     
     with col1:
-        st.markdown('<p class="section-header">📤 Upload Your CV</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header"><i class="fas fa-file-upload fa-icon"></i>Upload Your CV</p>', unsafe_allow_html=True)
         
         uploaded_file = st.file_uploader(
             "Choose your CV file",
@@ -348,17 +509,29 @@ def main():
         cv_text = ""
         if uploaded_file:
             try:
-                with st.spinner("📄 Extracting text from your CV..."):
+                with st.spinner("<i class='fas fa-spinner fa-spin'></i> Extracting text from your CV..."):
                     cv_text = extract_text(uploaded_file)
                 
                 # Success message with stats
                 col_success1, col_success2 = st.columns([3, 1])
                 with col_success1:
-                    st.success(f"✅ Successfully extracted text!")
+                    st.markdown("""
+                        <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 0.75rem; border-radius: 5px;">
+                            <p style="margin: 0; color: #155724;">
+                                <i class="fas fa-check-circle"></i> <strong>Successfully extracted text!</strong>
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
                 with col_success2:
-                    st.info(f"📊 {len(cv_text)} chars")
+                    st.markdown(f"""
+                        <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 0.75rem; border-radius: 5px;">
+                            <p style="margin: 0; color: #0c5460; text-align: center;">
+                                <i class="fas fa-chart-line"></i> <strong>{len(cv_text)}</strong> chars
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
                 
-                with st.expander("👀 Preview CV Text (First 500 characters)"):
+                with st.expander("👁️ Preview CV Text (First 500 characters)"):
                     st.text_area(
                         "CV Content Preview",
                         cv_text[:500] + "..." if len(cv_text) > 500 else cv_text,
@@ -366,21 +539,34 @@ def main():
                         label_visibility="collapsed"
                     )
             except Exception as e:
-                st.error(f"❌ Error extracting text: {str(e)}")
-                st.info("💡 **Tip:** Make sure your file isn't password-protected or corrupted.")
+                st.markdown(f"""
+                    <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 0.75rem; border-radius: 5px;">
+                        <p style="margin: 0; color: #721c24;">
+                            <i class="fas fa-times-circle"></i> <strong>Error extracting text:</strong> {str(e)}
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.markdown("""
+                    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 0.75rem; border-radius: 5px; margin-top: 0.5rem;">
+                        <p style="margin: 0; color: #856404;">
+                            <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Make sure your file isn't password-protected or corrupted.
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
         else:
             # Show helpful message when no file uploaded
             st.markdown("""
                 <div class="upload-section">
                     <p style="text-align: center; color: #666; margin: 1rem;">
-                        📁 <strong>Drag and drop your CV here</strong><br>
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                        <strong>Drag and drop your CV here</strong><br>
                         <small>or click to browse</small>
                     </p>
                 </div>
             """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown('<p class="section-header">📝 Job Description</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header"><i class="fas fa-clipboard-list fa-icon"></i>Job Description</p>', unsafe_allow_html=True)
         
         jd_text = st.text_area(
             "Paste the job description here",
@@ -399,7 +585,7 @@ Example:
         if jd_text:
             char_count = len(jd_text)
             word_count = len(jd_text.split())
-            st.caption(f"📊 {char_count} characters • {word_count} words")
+            st.caption(f"<i class='fas fa-chart-line'></i> {char_count} characters • {word_count} words")
     
     # Analysis button
     st.markdown("---")
@@ -412,16 +598,34 @@ Example:
                 <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); 
                             padding: 1rem; border-radius: 10px; text-align: center; margin: 1rem 0;">
                     <p style="margin: 0; color: #2e7d32; font-weight: 600;">
-                        ✅ Ready to analyze! Click the button below.
+                        <i class="fas fa-check-circle"></i> Ready to analyze! Click the button below.
                     </p>
                 </div>
             """, unsafe_allow_html=True)
     elif not cv_text and not jd_text:
-        st.info("👆 Please upload a CV and paste a Job Description to get started")
+        st.markdown("""
+            <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 1rem; border-radius: 5px;">
+                <p style="margin: 0; color: #0c5460;">
+                    <i class="fas fa-hand-point-up"></i> <strong>Please upload a CV and paste a Job Description to get started</strong>
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
     elif not cv_text:
-        st.warning("⚠️ Please upload a CV file")
+        st.markdown("""
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 5px;">
+                <p style="margin: 0; color: #856404;">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Please upload a CV file</strong>
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
     else:
-        st.warning("⚠️ Please paste a Job Description")
+        st.markdown("""
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 5px;">
+                <p style="margin: 0; color: #856404;">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Please paste a Job Description</strong>
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
     
     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
     
@@ -474,7 +678,13 @@ Example:
                 if use_rag and save_to_db and st.session_state.db:
                     st.session_state.db.add_cv(cv_text, {'source': uploaded_file.name if uploaded_file else 'unknown'})
                     st.session_state.db.add_jd(jd_text, {'timestamp': 'now'})
-                    st.success("💾 Saved to database!")
+                    st.markdown("""
+                        <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 0.75rem; border-radius: 5px;">
+                            <p style="margin: 0; color: #155724;">
+                                <i class="fas fa-save"></i> <strong>Saved to database!</strong>
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
                 
                 # Clear progress indicators
                 import time
@@ -483,46 +693,79 @@ Example:
                 status_text.empty()
                 
             except Exception as e:
-                st.error(f"❌ Error during analysis: {str(e)}")
-                st.info("💡 **Troubleshooting:**\n- Make sure your CV contains text\n- Check that the job description is complete\n- Try with a different file format")
+                st.markdown(f"""
+                    <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 1rem; border-radius: 5px;">
+                        <p style="margin: 0; color: #721c24;">
+                            <i class="fas fa-times-circle"></i> <strong>Error during analysis:</strong> {str(e)}
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.markdown("""
+                    <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 1rem; border-radius: 5px; margin-top: 0.5rem;">
+                        <p style="margin: 0; color: #0c5460;">
+                            <i class="fas fa-lightbulb"></i> <strong>Troubleshooting:</strong><br>
+                            • Make sure your CV contains text<br>
+                            • Check that the job description is complete<br>
+                            • Try with a different file format
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
                 progress_bar.empty()
                 status_text.empty()
     
     # Display results
     if st.session_state.analysis_result:
         st.markdown("---")
-        st.markdown('<p class="section-header">📊 Analysis Results</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header"><i class="fas fa-chart-pie fa-icon"></i>Analysis Results</p>', unsafe_allow_html=True)
         
         result = st.session_state.analysis_result
         
         # Overall score with visual appeal
-        st.markdown("### 🎯 Overall Match Score")
+        st.markdown('<h3><i class="fas fa-crosshairs fa-icon"></i>Overall Match Score</h3>', unsafe_allow_html=True)
         render_score_box(result['overall_score'])
         
         # Interpretation message
         score = result['overall_score']
         if score >= 70:
-            st.success("🌟 **Excellent Match!** This candidate shows strong alignment with the job requirements.")
+            st.markdown("""
+                <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 1rem; border-radius: 5px;">
+                    <p style="margin: 0; color: #155724;">
+                        <i class="fas fa-star"></i> <strong>Excellent Match!</strong> This candidate shows strong alignment with the job requirements.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
         elif score >= 50:
-            st.info("👍 **Good Match!** The candidate has several relevant qualifications worth considering.")
+            st.markdown("""
+                <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 1rem; border-radius: 5px;">
+                    <p style="margin: 0; color: #0c5460;">
+                        <i class="fas fa-thumbs-up"></i> <strong>Good Match!</strong> The candidate has several relevant qualifications worth considering.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
         else:
-            st.warning("⚠️ **Moderate Match.** The candidate may need additional skills or experience for this role.")
+            st.markdown("""
+                <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 5px;">
+                    <p style="margin: 0; color: #856404;">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Moderate Match.</strong> The candidate may need additional skills or experience for this role.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
         
         # Detailed scores in a nice grid
-        st.markdown("### 📈 Detailed Breakdown")
-        col_s1, col_s2, col_s3 = st.columns(3)
+        st.markdown('<h3><i class="fas fa-chart-line fa-icon"></i>Detailed Breakdown</h3>', unsafe_allow_html=True)
+        col_s1, col_s2, col_s3, col_s4 = st.columns(4)
         
         with col_s1:
-            st.metric(
-                "🔤 Keyword Match", 
-                f"{result['keyword_score']}%",
-                help="How well CV keywords match the job description"
-            )
-        with col_s2:
             st.metric(
                 "💼 Skill Match", 
                 f"{result['skill_score']}%",
                 help="Technical skills alignment"
+            )
+        with col_s2:
+            st.metric(
+                "⏱️ Experience", 
+                f"{result['experience_score']}%",
+                help="Years of experience match"
             )
         with col_s3:
             st.metric(
@@ -530,14 +773,94 @@ Example:
                 f"{result['similarity_score']}%",
                 help="Overall document similarity (TF-IDF)"
             )
+        with col_s4:
+            st.metric(
+                "🔤 Keyword Match", 
+                f"{result['keyword_score']}%",
+                help="How well CV keywords match the job description"
+            )
+        
+        # Experience details in a nice info box
+        if 'cv_years_experience' in result and result['cv_years_experience'] > 0:
+            st.markdown('<h3><i class="fas fa-briefcase fa-icon"></i>Experience Analysis</h3>', unsafe_allow_html=True)
+            
+            exp_col1, exp_col2 = st.columns([2, 1])
+            
+            with exp_col1:
+                st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+                                padding: 1.5rem; border-radius: 10px; border-left: 5px solid #1976d2;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1565c0;"><i class="fas fa-chart-bar"></i> Experience Summary</h4>
+                        <p style="margin: 0.5rem 0; font-size: 1.1rem;">
+                            <strong>Total Experience:</strong> {result['cv_years_experience']} years ({result['cv_jobs_found']} positions found)
+                        </p>
+                        <p style="margin: 0.5rem 0; font-size: 1.1rem;">
+                            <strong>Required Experience:</strong> {result['jd_required_years']} years
+                        </p>
+                        <p style="margin: 0.5rem 0; font-size: 1.1rem;">
+                            <strong>Status:</strong> {result['experience_match']}
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with exp_col2:
+                # Visual indicator
+                cv_exp = result['cv_years_experience']
+                req_exp = result['jd_required_years']
+                
+                if req_exp > 0:
+                    if cv_exp >= req_exp:
+                        st.markdown(f"""
+                            <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 1rem; border-radius: 5px; text-align: center;">
+                                <p style="margin: 0; color: #155724;">
+                                    <i class="fas fa-check-circle"></i> <strong>Meets Requirement</strong>
+                                </p>
+                                <p style="margin: 0.5rem 0 0 0; color: #155724; font-size: 1.2rem; font-weight: 600;">
+                                    {cv_exp} ≥ {req_exp} years
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    elif cv_exp >= req_exp * 0.7:
+                        st.markdown(f"""
+                            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 5px; text-align: center;">
+                                <p style="margin: 0; color: #856404;">
+                                    <i class="fas fa-exclamation-triangle"></i> <strong>Close Match</strong>
+                                </p>
+                                <p style="margin: 0.5rem 0 0 0; color: #856404; font-size: 1.2rem; font-weight: 600;">
+                                    {cv_exp} vs {req_exp} years
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                            <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 1rem; border-radius: 5px; text-align: center;">
+                                <p style="margin: 0; color: #721c24;">
+                                    <i class="fas fa-times-circle"></i> <strong>Below Requirement</strong>
+                                </p>
+                                <p style="margin: 0.5rem 0 0 0; color: #721c24; font-size: 1.2rem; font-weight: 600;">
+                                    {cv_exp} < {req_exp} years
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                        <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 1rem; border-radius: 5px; text-align: center;">
+                            <p style="margin: 0; color: #0c5460;">
+                                <i class="fas fa-info-circle"></i> <strong>No Requirement</strong>
+                            </p>
+                            <p style="margin: 0.5rem 0 0 0; color: #0c5460; font-size: 1.2rem; font-weight: 600;">
+                                Candidate: {cv_exp} years
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
         
         # Matched and Missing Skills with better visuals
-        st.markdown("### 🎯 Skills Analysis")
+        st.markdown('<h3><i class="fas fa-tasks fa-icon"></i>Skills Analysis</h3>', unsafe_allow_html=True)
         
         col_match1, col_match2 = st.columns(2)
         
         with col_match1:
-            st.markdown('<p style="font-size: 1.2rem; font-weight: 600; color: #28a745;">✅ Matched Skills</p>', 
+            st.markdown('<p style="font-size: 1.2rem; font-weight: 600; color: #28a745;"><i class="fas fa-check-circle"></i> Matched Skills</p>', 
                        unsafe_allow_html=True)
             
             if result['matched_skills']:
@@ -546,7 +869,7 @@ Example:
                 
                 # Display skills as badges
                 skills_html = "".join([
-                    f'<span class="skill-badge">✓ {skill}</span>' 
+                    f'<span class="skill-badge"><i class="fas fa-check"></i> {skill}</span>' 
                     for skill in result['matched_skills'][:20]
                 ])
                 st.markdown(f'<div style="margin: 1rem 0;">{skills_html}</div>', unsafe_allow_html=True)
@@ -559,7 +882,7 @@ Example:
                 st.info("No specific technical skills matched. Consider highlighting more technical keywords in the CV.")
         
         with col_match2:
-            st.markdown('<p style="font-size: 1.2rem; font-weight: 600; color: #dc3545;">❌ Missing Skills</p>', 
+            st.markdown('<p style="font-size: 1.2rem; font-weight: 600; color: #dc3545;"><i class="fas fa-times-circle"></i> Missing Skills</p>', 
                        unsafe_allow_html=True)
             
             if result['missing_skills']:
@@ -568,7 +891,7 @@ Example:
                 
                 # Display missing skills as badges
                 skills_html = "".join([
-                    f'<span class="missing-badge">✗ {skill}</span>' 
+                    f'<span class="missing-badge"><i class="fas fa-times"></i> {skill}</span>' 
                     for skill in result['missing_skills'][:20]
                 ])
                 st.markdown(f'<div style="margin: 1rem 0;">{skills_html}</div>', unsafe_allow_html=True)
@@ -578,14 +901,20 @@ Example:
                     with st.expander(f"Show all {len(result['missing_skills'])} missing skills"):
                         st.write(", ".join(result['missing_skills']))
             else:
-                st.success("🎉 No missing skills! Excellent coverage!")
+                st.markdown("""
+                    <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 1rem; border-radius: 5px;">
+                        <p style="margin: 0; color: #155724;">
+                            <i class="fas fa-trophy"></i> <strong>No missing skills! Excellent coverage!</strong>
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
         
         # Matched and Missing Keywords
         with st.expander("🔍 Detailed Keyword Analysis", expanded=False):
             col_k1, col_k2 = st.columns(2)
             
             with col_k1:
-                st.markdown("**✅ Matched Keywords:**")
+                st.markdown("**<i class='fas fa-check-circle' style='color: #28a745;'></i> Matched Keywords:**")
                 if result['matched_keywords']:
                     # Show in organized way
                     keywords_per_row = 5
@@ -603,7 +932,7 @@ Example:
                     st.write("None")
             
             with col_k2:
-                st.markdown("**❌ Missing Keywords:**")
+                st.markdown("**<i class='fas fa-times-circle' style='color: #dc3545;'></i> Missing Keywords:**")
                 if result['missing_keywords']:
                     # Show in organized way
                     keywords_per_row = 5
@@ -623,7 +952,7 @@ Example:
         # LLM Analysis - showcase it prominently
         if result.get('llm_analysis'):
             st.markdown("---")
-            st.markdown("### 🤖 Expert Analysis & Recommendations")
+            st.markdown('<h3><i class="fas fa-robot fa-icon"></i>Expert Analysis & Recommendations</h3>', unsafe_allow_html=True)
             
             # Create a nice box for the analysis
             st.markdown(f"""
@@ -634,12 +963,18 @@ Example:
             """, unsafe_allow_html=True)
         else:
             st.markdown("---")
-            st.markdown("### 📝 Analysis Summary")
-            st.info("💡 **Tip:** Add your OpenAI API key in the sidebar to get AI-powered recommendations and detailed insights!")
+            st.markdown('<h3><i class="fas fa-file-alt fa-icon"></i>Analysis Summary</h3>', unsafe_allow_html=True)
+            st.markdown("""
+                <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 5px;">
+                    <p style="margin: 0; color: #856404;">
+                        <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Add your OpenAI API key in the sidebar to get AI-powered recommendations and detailed insights!
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
         
         # Download report with better formatting
         st.markdown("---")
-        st.markdown("### 📥 Export Results")
+        st.markdown('<h3><i class="fas fa-download fa-icon"></i>Export Results</h3>', unsafe_allow_html=True)
         
         col_dl1, col_dl2, col_dl3 = st.columns([1, 2, 1])
         
@@ -655,9 +990,20 @@ Example:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Overall Match Score:      {result['overall_score']}%
-Keyword Match:            {result['keyword_score']}%
 Skill Match:              {result['skill_score']}%
+Experience Match:         {result['experience_score']}%
 Text Similarity:          {result['similarity_score']}%
+Keyword Match:            {result['keyword_score']}%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💼 EXPERIENCE ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Candidate Total Experience: {result.get('cv_years_experience', 0)} years
+Positions Found:            {result.get('cv_jobs_found', 0)}
+Required Experience:        {result.get('jd_required_years', 0)} years
+Experience Match Status:    {result.get('experience_match', 'Not specified')}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -708,18 +1054,24 @@ Report Date: {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S'
                 use_container_width=True
             )
             
-            st.caption("💡 Download includes full analysis with scores, skills, keywords, and recommendations")
+            st.markdown("""
+                <p style="text-align: center; color: #666; font-size: 0.9rem; margin-top: 0.5rem;">
+                    <i class="fas fa-lightbulb"></i> Download includes full analysis with scores, skills, keywords, and recommendations
+                </p>
+            """, unsafe_allow_html=True)
     
     # Footer
     st.markdown("---")
     st.markdown("""
         <div style="text-align: center; color: #666; padding: 2rem 0 1rem 0;">
             <p style="margin: 0;">
-                Made with ❤️ by <strong>Smart CV Filter</strong> | 
-                <a href="https://github.com/Atik1000/Smart-CV-Filter" target="_blank" style="color: #1f77b4; text-decoration: none;">GitHub</a>
+                Made with <i class="fas fa-heart" style="color: #e74c3c;"></i> by <strong>Smart CV Filter</strong> | 
+                <a href="https://github.com/Atik1000/Smart-CV-Filter" target="_blank" style="color: #1f77b4; text-decoration: none;">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
             </p>
             <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">
-                💡 <strong>Tip:</strong> Works great without OpenAI API key! Add it for advanced AI insights.
+                <i class="fas fa-lightbulb" style="color: #ffd700;"></i> <strong>Tip:</strong> Works great without OpenAI API key! Add it for advanced AI insights.
             </p>
         </div>
     """, unsafe_allow_html=True)
